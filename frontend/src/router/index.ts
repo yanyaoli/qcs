@@ -6,6 +6,8 @@ import LoginPage from '../views/LoginPage.vue'
 import DashboardPage from '../views/DashboardPage.vue'
 import InfoPage from '../views/InfoPage.vue'
 import PlaceholderPage from '../views/PlaceholderPage.vue'
+import ProductionPage from '../views/ProductionPage.vue'
+import FirstArticlePage from '../views/FirstArticlePage.vue'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -38,13 +40,13 @@ const routes: RouteRecordRaw[] = [
       },
       {
         path: 'production',
-        component: PlaceholderPage,
+        component: ProductionPage,
         name: 'Production',
         meta: { title: '生产管理' }
       },
       {
         path: 'first-article',
-        component: PlaceholderPage,
+        component: FirstArticlePage,
         name: 'FirstArticle',
         meta: { title: '首件确认' }
       },

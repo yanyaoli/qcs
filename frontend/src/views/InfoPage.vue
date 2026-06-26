@@ -29,6 +29,10 @@
       <div class="content-header">
         <h2>{{ currentTitle }}</h2>
       </div>
+      <div v-if="activeKey === 'auth'" class="content-hint">
+        <i class="ri-information-line"></i>
+        <span>重置密码请在管理系统中操作</span>
+      </div>
 
       <!-- 部门管理 -->
       <div v-if="activeKey === 'departments'" class="content-body">
@@ -113,11 +117,11 @@
       <div v-if="activeKey === 'auth'" class="content-body">
         <div class="tbl-wrap">
           <table class="tbl">
-            <thead><tr><th>姓名</th><th style="width:120px">工号</th><th>账号</th><th style="width:120px" class="cell-center">密码</th><th style="width:120px" class="cell-center">人脸数据</th></tr></thead>
+            <thead><tr><th>姓名</th><th style="width:120px">工号</th><th>账号</th><th style="width:100px" class="cell-center">账号状态</th><th style="width:120px" class="cell-center">人脸数据</th></tr></thead>
             <tbody>
               <tr v-for="(row, i) in authData" :key="row.employee_id" :style="rowStyle(i)">
                 <td>{{ row.name }}</td><td>{{ row.employee_no }}</td><td>{{ row.username }}</td>
-                <td class="cell-center"><span class="password-placeholder">••••••</span></td>
+                <td class="cell-center"><span :class="row.status === '启用' ? 'tag-green' : 'tag-gray'">{{ row.status }}</span></td>
                 <td class="cell-center"><span v-if="row.has_face" class="tag-green">已录入</span><span v-else class="tag-gray">未录入</span></td>
               </tr>
             </tbody>
@@ -125,7 +129,7 @@
         </div>
       </div>
 
-      <!-- 机台管理 -->
+      <!-- 机台档案 -->
       <div v-if="activeKey === 'machines'" class="content-body">
         <div class="tbl-wrap">
           <table class="tbl">
@@ -133,6 +137,45 @@
             <tbody>
               <tr v-for="(row, i) in machineData" :key="row.id" :style="rowStyle(i)">
                 <td>{{ row.code }}</td><td>{{ row.department }}</td><td>{{ row.location }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 不良原因分类库 -->
+      <div v-if="activeKey === 'defectCauses'" class="content-body">
+        <div v-for="group in defectCauseByDept" :key="group.department" class="cause-group">
+          <div class="cause-dept-title">{{ group.department }}</div>
+          <div class="cause-tags">
+            <span v-for="cause in group.causes" :key="cause" class="cause-tag">{{ cause }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 单位库 -->
+      <div v-if="activeKey === 'units'" class="content-body">
+        <div v-for="group in unitByCategory" :key="group.category" class="cause-group">
+          <div class="cause-dept-title">{{ group.category }}</div>
+          <div class="cause-tags">
+            <span v-for="item in group.items" :key="item" class="cause-tag">{{ item }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 产品标准规格库 -->
+      <div v-if="activeKey === 'productStandards'" class="content-body">
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <thead><tr><th>品名规格描述</th><th>标准宽度</th><th>宽度公差限</th><th>标准厚度</th><th>厚度公差限</th><th>标准拉力基准值</th></tr></thead>
+            <tbody>
+              <tr v-for="(row, i) in productStandards" :key="row.id" :style="rowStyle(i)">
+                <td>{{ row.description }}</td>
+                <td>{{ row.standardWidth }}</td>
+                <td>{{ row.widthTolerance }}</td>
+                <td>{{ row.standardThickness }}</td>
+                <td>{{ row.thicknessTolerance }}</td>
+                <td>{{ row.standardTension }}</td>
               </tr>
             </tbody>
           </table>
@@ -147,9 +190,10 @@ import { ref, computed } from 'vue'
 import {
   departments, shifts, positions, permissions,
   employees, machines, employeeAuth,
+  defectCauses, units, productStandards,
 } from '../mock/data'
 
-const expandedGroups = ref(new Set(['组织管理']))
+const expandedGroups = ref(new Set(['组织管理', '人员信息', '认证信息', '机台管理', '不良原因分类库', '单位库', '产品标准规格库']))
 const activeKey = ref('departments')
 
 const toggleGroup = (label: string) => {
@@ -164,7 +208,7 @@ const navGroups = [
       { key: 'departments', label: '部门管理', icon: 'ri-building-line' },
       { key: 'shifts', label: '班次管理', icon: 'ri-time-line' },
       { key: 'positions', label: '职位管理', icon: 'ri-user-star-line' },
-      { key: 'permissions', label: '权限管理', icon: 'ri-shield-keyhole-line' },
+      { key: 'permissions', label: '权限说明', icon: 'ri-shield-keyhole-line' },
     ],
   },
   {
@@ -176,13 +220,31 @@ const navGroups = [
   {
     label: '认证信息',
     children: [
-      { key: 'auth', label: '认证信息', icon: 'ri-shield-user-line' },
+      { key: 'auth', label: '账号管理', icon: 'ri-shield-user-line' },
     ],
   },
   {
     label: '机台管理',
     children: [
-      { key: 'machines', label: '机台管理', icon: 'ri-server-line' },
+      { key: 'machines', label: '机台档案', icon: 'ri-server-line' },
+    ],
+  },
+  {
+    label: '不良原因分类库',
+    children: [
+      { key: 'defectCauses', label: '不良原因', icon: 'ri-close-circle-line' },
+    ],
+  },
+  {
+    label: '单位库',
+    children: [
+      { key: 'units', label: '单位维护', icon: 'ri-ruler-line' },
+    ],
+  },
+  {
+    label: '产品标准规格库',
+    children: [
+      { key: 'productStandards', label: '标准规格', icon: 'ri-bookmark-line' },
     ],
   },
 ]
@@ -191,10 +253,13 @@ const titles: Record<string, string> = {
   departments: '部门管理',
   shifts: '班次管理',
   positions: '职位管理',
-  permissions: '权限管理',
+  permissions: '权限说明',
   employees: '人员信息',
-  auth: '认证信息',
-  machines: '机台管理',
+  auth: '账号管理',
+  machines: '机台档案',
+  defectCauses: '不良原因分类库',
+  units: '单位库',
+  productStandards: '产品标准规格库',
 }
 
 const currentTitle = computed(() => titles[activeKey.value] || '')
@@ -229,6 +294,28 @@ const machineData = computed(() =>
   }))
 )
 
+const defectCauseDepartments = computed(() =>
+  [...new Set(defectCauses.map(d => d.department))]
+)
+
+const defectCauseByDept = computed(() =>
+  defectCauseDepartments.value.map(dept => ({
+    department: dept,
+    causes: defectCauses.filter(d => d.department === dept).map(d => d.cause),
+  }))
+)
+
+const unitCategories = computed(() =>
+  [...new Set(units.map(u => u.category))]
+)
+
+const unitByCategory = computed(() =>
+  unitCategories.value.map(cat => ({
+    category: cat,
+    items: units.filter(u => u.category === cat).map(u => u.unit),
+  }))
+)
+
 const rowStyle = (i: number) => i % 2 === 1 ? { backgroundColor: 'rgba(255, 255, 255, 0.04)' } as const : {}
 </script>
 
@@ -246,6 +333,7 @@ const rowStyle = (i: number) => i % 2 === 1 ? { backgroundColor: 'rgba(255, 255,
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  overflow-y: auto;
 }
 
 .nav-group-title {
@@ -318,13 +406,31 @@ const rowStyle = (i: number) => i % 2 === 1 ? { backgroundColor: 'rgba(255, 255,
 }
 
 .content-header {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
 
   h2 {
     margin: 0;
     color: var(--color-text);
     font-size: 1.3rem;
     font-weight: 600;
+  }
+}
+
+.content-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  margin-bottom: 1rem;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  font-size: 0.85rem;
+
+  i {
+    color: var(--color-info);
+    font-size: 1rem;
   }
 }
 
@@ -417,8 +523,42 @@ const rowStyle = (i: number) => i % 2 === 1 ? { backgroundColor: 'rgba(255, 255,
   font-size: 0.85rem;
 }
 
-.password-placeholder {
-  color: #6b7280;
-  letter-spacing: 2px;
+.cause-group {
+  margin-bottom: 1.5rem;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.cause-dept-title {
+  color: var(--color-text);
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.cause-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.cause-tag {
+  display: inline-block;
+  padding: 5px 14px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--color-text);
+  border-radius: 16px;
+  font-size: 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.15s;
+
+  &:hover {
+    background: rgba(229, 9, 20, 0.1);
+    border-color: rgba(229, 9, 20, 0.3);
+  }
 }
 </style>

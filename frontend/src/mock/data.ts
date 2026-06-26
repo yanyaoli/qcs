@@ -41,6 +41,7 @@ export interface Machine {
 export interface EmployeeAuth {
   employee_id: number
   username: string
+  status: string
   has_face: boolean
 }
 
@@ -51,3 +52,58 @@ export const permissions: Permission[] = raw.permissions
 export const machines: Machine[] = raw.machines
 export const employeeAuth: EmployeeAuth[] = raw.employeeAuth
 export const employees: Employee[] = raw.employees
+
+export interface DefectCause {
+  id: number
+  department: string
+  cause: string
+}
+
+export interface Unit {
+  id: number
+  category: string
+  unit: string
+}
+
+export interface ProductStandard {
+  id: number
+  description: string
+  standardWidth: string
+  widthTolerance: string
+  standardThickness: string
+  thicknessTolerance: string
+  standardTension: string
+}
+
+export const defectCauses: DefectCause[] = raw.defectCauses
+export const units: Unit[] = raw.units
+export const productStandards: ProductStandard[] = raw.productStandards
+
+export interface FirstArticleConfirmation {
+  productKey: string
+  status: string
+  confirmedBy?: string
+  confirmedAt?: string
+  businessConfirmed?: boolean
+  businessConfirmedBy?: string
+  businessConfirmedAt?: string
+}
+
+export const firstArticleConfirmations: FirstArticleConfirmation[] = raw.firstArticleConfirmations
+
+export interface WorkOrder {
+  id: number
+  workOrderNo: string
+  customerCode: string
+  scheduleDate: string
+  productName: string
+  specification: string
+  color: string
+  ironTapeStatus: string
+  machineCode: string
+  createdAt: string
+  updatedAt: string
+  tensionTest?: string
+}
+
+export const workOrders: WorkOrder[] = raw.workOrders as WorkOrder[]

@@ -113,7 +113,7 @@ const handleLogout = () => {
 <style scoped lang="scss">
 .main-layout {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
   background-color: var(--color-background);
 }
 
@@ -182,13 +182,14 @@ const handleLogout = () => {
 }
 
 .sidebar-header {
-  padding: var(--spacing-lg) var(--spacing-md);
+  height: 64px;
+  padding: 0 var(--spacing-lg);
   display: flex;
   align-items: center;
   justify-content: space-between;
   border-bottom: 1px solid var(--color-border);
   gap: var(--spacing-sm);
-  min-height: 64px;
+  flex-shrink: 0;
 }
 
 .logo {
@@ -292,17 +293,23 @@ const handleLogout = () => {
 
 .main-content {
   flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
 }
 
 .header {
+  height: 64px;
+  padding: 0 var(--spacing-lg);
+  display: flex;
+  align-items: center;
   background: var(--color-panel);
   border-bottom: 1px solid var(--color-border);
-  padding: var(--spacing-lg);
+  flex-shrink: 0;
 }
 
 .header-content {
+  width: 100%;
   max-width: 1400px;
   margin: 0 auto;
   display: flex;
@@ -325,7 +332,10 @@ const handleLogout = () => {
 
 .content {
   flex: 1;
-  overflow-y: auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   padding: var(--spacing-xl);
   max-width: 1400px;
   margin: 0 auto;

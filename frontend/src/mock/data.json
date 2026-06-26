@@ -105,11 +105,11 @@
   ],
   "firstArticleConfirmations": [
     { "productKey": "装配件A型|50×30×20mm", "status": "待确认" },
-    { "productKey": "连接杆B|120×15mm", "status": "品管确认", "confirmedBy": "林涛", "confirmedAt": "2024-06-03 10:30" },
+    { "productKey": "连接杆B|120×15mm", "status": "品管确认", "result": "OK", "confirmedBy": "林涛", "confirmedAt": "2024-06-03 10:30" },
     { "productKey": "固定支架|80×40mm", "status": "待确认" },
-    { "productKey": "法兰盘|DN150×16mm", "status": "组长确认", "confirmedBy": "王强", "confirmedAt": "2024-06-13 09:15" },
-    { "productKey": "密封圈|DN200", "status": "已确认", "confirmedBy": "王强", "confirmedAt": "2024-06-11 14:00", "businessConfirmed": true, "businessConfirmedBy": "陈丽", "businessConfirmedAt": "2024-06-11 16:30" },
+    { "productKey": "法兰盘|DN150×16mm", "status": "组长确认", "result": "NG", "defectCause": "尺寸不合", "confirmedBy": "王强", "confirmedAt": "2024-06-13 09:15" },
+    { "productKey": "密封圈|DN200", "status": "已确认", "result": "OK", "confirmedBy": "王强", "confirmedAt": "2024-06-11 14:00", "businessConfirmed": true, "businessConfirmedBy": "陈丽", "businessConfirmedAt": "2024-06-11 16:30" },
     { "productKey": "定位销|10×50mm", "status": "待确认" },
-    { "productKey": "加强筋板|200×100×8mm", "status": "业务确认", "confirmedBy": "陈丽", "confirmedAt": "2024-06-26 11:00" }
+    { "productKey": "加强筋板|200×100×8mm", "status": "业务确认", "result": "NG", "defectCause": "脏污", "confirmedBy": "陈丽", "confirmedAt": "2024-06-26 11:00" }
   ]
 }

@@ -21,12 +21,13 @@
           <div class="card-top">
             <span class="card-title">{{ group.productName }}</span>
             <span class="card-spec">{{ group.specification }}</span>
+            <span class="order-count">&times;{{ group.orders.length }}</span>
             <span class="status-label" :class="statusLabelClass(group.status)">{{ group.status }}</span>
           </div>
           <div class="card-mid">
-            <span class="order-count">{{ group.orders.length }} 单</span>
             <span class="sub-info" v-if="group.confirmedBy">{{ group.confirmedBy }}</span>
             <span class="sub-info" v-if="group.businessConfirmedBy"> / {{ group.businessConfirmedBy }}</span>
+            <span class="update-time">{{ group.lastUpdate }}</span>
           </div>
         </div>
         <div v-if="displayGroups.length === 0" class="empty">暂无待确认项</div>
@@ -58,59 +59,37 @@
               <table class="mini-tbl">
                 <thead>
                   <tr>
-                    <th style="width:100px">工作单号</th>
-                    <th style="width:90px">客户代号</th>
-                    <th style="width:80px">排单日期</th>
-                    <th style="width:60px">颜色</th>
-                    <th style="width:70px">机台</th>
-                    <th style="width:80px">烫带状态</th>
-                    <th style="width:60px"></th>
+                    <th><span class="th-primary">工作单号</span><span class="th-secondary">客户代号</span><span class="th-tertiary">排单日期</span></th>
+                    <th><span class="th-primary">品名</span><span class="th-secondary">规格</span><span class="th-tertiary">颜色</span></th>
+                    <th style="width:140px"><span class="th-primary">判定结果</span><span class="th-secondary">烫带状态</span><span class="th-tertiary">拉力测试</span></th>
+                    <th style="width:150px"><span class="th-primary">机台编号</span><span class="th-secondary">物理位置</span><span class="th-tertiary">所属部门</span></th>
                   </tr>
                 </thead>
                 <tbody>
                   <template v-for="(row, i) in selectedGroup.orders" :key="row.id">
-                    <tr :class="{ alt: i % 2 === 1 }" class="clickable-row" @click="toggleRowExpand(row.id)">
-                      <td>{{ row.workOrderNo }}</td>
-                      <td>{{ row.customerCode }}</td>
-                      <td>{{ row.scheduleDate }}</td>
+                    <tr :class="{ alt: i % 2 === 1 }">
                       <td>
-                        <span class="color-dot" :style="{ backgroundColor: colorMap[row.color] || '#999' }"></span>
-                        {{ row.color }}
-                      </td>
-                      <td>{{ row.machineCode }}</td>
-                      <td>
-                        <span class="status-tag" :class="statusClass(row.ironTapeStatus)">{{ row.ironTapeStatus }}</span>
+                        <div class="cell-primary">{{ row.workOrderNo }}</div>
+                        <div class="cell-secondary">{{ row.customerCode }}</div>
+                        <div class="cell-tertiary">{{ row.scheduleDate }}</div>
                       </td>
                       <td>
-                        <i class="ri-arrow-down-s-line expand-icon" :class="{ open: expandedRows.has(row.id) }"></i>
+                        <div class="cell-primary">{{ row.productName }}</div>
+                        <div class="cell-secondary">{{ row.specification }}</div>
+                        <div class="cell-tertiary"><span class="color-dot" :style="{ backgroundColor: colorMap[row.color] || '#999' }"></span>{{ row.color }}</div>
                       </td>
-                    </tr>
-                    <tr v-if="expandedRows.has(row.id)" class="expand-row">
-                      <td colspan="7">
-                        <div class="expand-content">
-                          <div class="expand-grid">
-                            <div class="expand-item">
-                              <span class="label">品名</span>
-                              <span class="value">{{ row.productName }}</span>
-                            </div>
-                            <div class="expand-item">
-                              <span class="label">规格</span>
-                              <span class="value">{{ row.specification }}</span>
-                            </div>
-                            <div class="expand-item">
-                              <span class="label">机台编号</span>
-                              <span class="value">{{ row.machineCode }}</span>
-                            </div>
-                            <div class="expand-item">
-                              <span class="label">物理位置</span>
-                              <span class="value">{{ getMachineLocation(row.machineCode) || '—' }}</span>
-                            </div>
-                            <div class="expand-item">
-                              <span class="label">所属部门</span>
-                              <span class="value">{{ getMachineDept(row.machineCode) || '—' }}</span>
-                            </div>
-                          </div>
+                      <td>
+                        <div class="cell-primary">
+                          <span v-if="getJudgmentResult(row)" class="judgment-tag" :class="getJudgmentClass(row)">{{ getJudgmentResult(row) }}</span>
+                          <span v-else class="judgment-none">—</span>
                         </div>
+                        <div class="cell-secondary"><span class="status-tag" :class="statusClass(row.ironTapeStatus)">{{ row.ironTapeStatus }}</span></div>
+                        <div class="cell-tertiary">{{ row.tensionTest || '—' }}</div>
+                      </td>
+                      <td>
+                        <div class="cell-primary">{{ row.machineCode }}</div>
+                        <div class="cell-secondary">{{ getMachineLocation(row.machineCode) || '—' }}</div>
+                        <div class="cell-tertiary">{{ getMachineDept(row.machineCode) || '—' }}</div>
                       </td>
                     </tr>
                   </template>
@@ -120,7 +99,7 @@
           </div>
         </div>
 
-        <div class="operation-area">
+        <div v-if="selectedGroup.status === '待确认'" class="operation-area">
           <div class="op-section">
             <div class="section-title">首件判定</div>
             <div class="judge-row">
@@ -163,6 +142,21 @@ const colorMap: Record<string, string> = {
   '绿色': '#10b981',
 }
 
+const getJudgmentResult = (row: WorkOrder): string => {
+  const key = `${row.productName}|${row.specification}`
+  const conf = confirmationMap.value.get(key)
+  if (!conf || !conf.result) return ''
+  const label = conf.result === 'OK' ? 'OK' : `NG${conf.defectCause ? ':' + conf.defectCause : ''}`
+  return label
+}
+
+const getJudgmentClass = (row: WorkOrder): string => {
+  const key = `${row.productName}|${row.specification}`
+  const conf = confirmationMap.value.get(key)
+  if (!conf || !conf.result) return ''
+  return conf.result === 'OK' ? 'judgment-ok' : 'judgment-ng'
+}
+
 const statusClass = (status: string) => {
   switch (status) {
     case '不需要': return 'status-no'
@@ -184,6 +178,7 @@ interface PendingGroup {
   businessConfirmed?: boolean
   businessConfirmedBy?: string
   businessConfirmedAt?: string
+  lastUpdate: string
 }
 
 const confirmationMap = computed(() => {
@@ -195,8 +190,11 @@ const confirmationMap = computed(() => {
 })
 
 const allGroups = computed<PendingGroup[]>(() => {
+  const relevant = workOrders.filter(
+    w => w.ironTapeStatus === '不需要' || w.ironTapeStatus === '烫带完成'
+  )
   const map = new Map<string, WorkOrder[]>()
-  for (const wo of workOrders) {
+  for (const wo of relevant) {
     const key = `${wo.productName}|${wo.specification}`
     if (!map.has(key)) map.set(key, [])
     map.get(key)!.push(wo)
@@ -204,6 +202,10 @@ const allGroups = computed<PendingGroup[]>(() => {
   return Array.from(map.entries()).map(([key, orders]) => {
     const [productName, specification] = key.split('|')
     const conf = confirmationMap.value.get(key)
+    const lastUpdate = [conf?.confirmedAt, conf?.businessConfirmedAt, ...orders.map(o => o.updatedAt)]
+      .filter(Boolean)
+      .sort()
+      .reverse()[0] || ''
     return {
       key,
       productName,
@@ -215,6 +217,7 @@ const allGroups = computed<PendingGroup[]>(() => {
       businessConfirmed: conf?.businessConfirmed,
       businessConfirmedBy: conf?.businessConfirmedBy,
       businessConfirmedAt: conf?.businessConfirmedAt,
+      lastUpdate,
     }
   })
 })
@@ -230,13 +233,6 @@ const selectedKey = ref<string | null>(null)
 const selectedGroup = computed(() =>
   displayGroups.value.find(g => g.key === selectedKey.value) ?? null
 )
-
-const expandedRows = ref(new Set<number>())
-
-const toggleRowExpand = (id: number) => {
-  if (expandedRows.value.has(id)) expandedRows.value.delete(id)
-  else expandedRows.value.add(id)
-}
 
 const getMachineLocation = (code: string) =>
   machines.find(m => m.code === code)?.location ?? ''
@@ -275,7 +271,6 @@ const selectGroup = (group: PendingGroup) => {
   selectedKey.value = group.key
   judgeResult.value = null
   selectedDefect.value = ''
-  expandedRows.value = new Set()
 }
 
 const judgeResult = ref<'OK' | 'NG' | null>(null)
@@ -444,12 +439,21 @@ onMounted(() => {
 
 .order-count {
   color: var(--color-text-secondary);
-  font-size: 0.75rem;
+  font-size: 0.8rem;
+  font-family: monospace;
+  margin-left: 0.15rem;
 }
 
 .sub-info {
   color: var(--color-text-secondary);
   font-size: 0.75rem;
+}
+
+.update-time {
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 0.7rem;
+  font-family: monospace;
+  margin-left: auto;
 }
 
 .empty {
@@ -525,69 +529,74 @@ onMounted(() => {
     color: #9ca3af;
     font-weight: 600;
     text-align: left;
-    padding: 6px 8px;
+    padding: 5px 8px;
     white-space: nowrap;
+    vertical-align: top;
+  }
+
+  .th-primary {
+    display: block;
+    font-size: 0.82rem;
+    line-height: 1.4;
+  }
+
+  .th-secondary {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 400;
+    color: rgba(156, 163, 175, 0.6);
+    line-height: 1.3;
+  }
+
+  .th-tertiary {
+    display: block;
+    font-size: 0.65rem;
+    font-weight: 400;
+    color: rgba(156, 163, 175, 0.4);
+    line-height: 1.2;
+  }
+
+  .cell-primary {
+    font-size: 0.82rem;
+    line-height: 1.4;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .cell-secondary {
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.5);
+    line-height: 1.3;
+    margin-top: 1px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .cell-tertiary {
+    font-size: 0.68rem;
+    color: rgba(255, 255, 255, 0.35);
+    line-height: 1.3;
+    margin-top: 1px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
   }
 
   td {
-    padding: 6px 8px;
+    padding: 5px 8px;
     color: #e5e7eb;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    vertical-align: top;
   }
 
   tr.alt td {
     background: rgba(255, 255, 255, 0.02);
   }
 
-  tr.clickable-row {
-    cursor: pointer;
-
-    &:hover td {
-      background: rgba(229, 9, 20, 0.08);
-    }
-  }
-}
-
-.expand-icon {
-  font-size: 1rem;
-  transition: transform 0.2s;
-  display: block;
-
-  &.open {
-    transform: rotate(180deg);
-  }
-}
-
-.expand-row td {
-  padding: 0;
-  border-bottom: none;
-}
-
-.expand-content {
-  padding: 0.6rem 1rem 0.8rem;
-  background: rgba(255, 255, 255, 0.02);
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.expand-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 0.5rem 1rem;
-}
-
-.expand-item {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-
-  .label {
-    color: var(--color-text-secondary);
-    font-size: 0.75rem;
-  }
-
-  .value {
-    color: var(--color-text);
-    font-size: 0.85rem;
+  tr:hover td {
+    background: rgba(229, 9, 20, 0.08);
   }
 }
 
@@ -598,6 +607,30 @@ onMounted(() => {
   border-radius: 50%;
   margin-right: 4px;
   border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.judgment-tag {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+
+  &.judgment-ok {
+    color: #10b981;
+    background: rgba(16, 185, 129, 0.15);
+  }
+
+  &.judgment-ng {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.15);
+  }
+}
+
+.judgment-none {
+  color: rgba(255, 255, 255, 0.25);
+  font-size: 0.78rem;
 }
 
 .status-tag {

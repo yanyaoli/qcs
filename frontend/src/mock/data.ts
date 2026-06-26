@@ -82,6 +82,8 @@ export const productStandards: ProductStandard[] = raw.productStandards
 export interface FirstArticleConfirmation {
   productKey: string
   status: string
+  result?: string
+  defectCause?: string
   confirmedBy?: string
   confirmedAt?: string
   businessConfirmed?: boolean

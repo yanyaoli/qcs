@@ -1,0 +1,63 @@
+{
+  "departments": [
+    { "id": 1, "name": "装配一车间" },
+    { "id": 2, "name": "装配二车间" },
+    { "id": 3, "name": "质检部" }
+  ],
+  "shifts": [
+    { "id": 1, "name": "A班" },
+    { "id": 2, "name": "B班" }
+  ],
+  "positions": [
+    { "id": 1, "name": "系统管理员" },
+    { "id": 2, "name": "现场品管" },
+    { "id": 3, "name": "现场组长" },
+    { "id": 4, "name": "业务员" },
+    { "id": 5, "name": "部门主管" }
+  ],
+  "permissions": [
+    { "position": "系统管理员", "canEditBasicDict": true, "canEditRelatedData": true },
+    { "position": "现场组长", "canEditBasicDict": true, "canEditRelatedData": false },
+    { "position": "部门主管", "canEditBasicDict": true, "canEditRelatedData": true },
+    { "position": "现场品管", "canEditBasicDict": false, "canEditRelatedData": false },
+    { "position": "业务员", "canEditBasicDict": false, "canEditRelatedData": false }
+  ],
+  "machines": [
+    { "id": 1, "code": "MCH-001", "department_id": 1, "location": "1号车间-A区" },
+    { "id": 2, "code": "MCH-002", "department_id": 1, "location": "1号车间-B区" },
+    { "id": 3, "code": "MCH-003", "department_id": 2, "location": "2号车间-A区" },
+    { "id": 4, "code": "MCH-004", "department_id": 2, "location": "2号车间-B区" },
+    { "id": 5, "code": "MCH-005", "department_id": 3, "location": "质检区-主站" },
+    { "id": 6, "code": "MCH-006", "department_id": 3, "location": "质检区-副站" }
+  ],
+  "employeeAuth": [
+    { "employee_id": 1, "username": "zhangming", "has_face": true },
+    { "employee_id": 2, "username": "wangqiang", "has_face": true },
+    { "employee_id": 3, "username": "chenli", "has_face": false },
+    { "employee_id": 4, "username": "lintao", "has_face": true },
+    { "employee_id": 5, "username": "zhaogang", "has_face": true },
+    { "employee_id": 6, "username": "lihua", "has_face": false },
+    { "employee_id": 7, "username": "zhouwei", "has_face": true },
+    { "employee_id": 8, "username": "wufang", "has_face": false },
+    { "employee_id": 9, "username": "zhenghao", "has_face": true },
+    { "employee_id": 10, "username": "liuyang", "has_face": true },
+    { "employee_id": 11, "username": "huangjie", "has_face": false },
+    { "employee_id": 12, "username": "sunting", "has_face": true },
+    { "employee_id": 13, "username": "machao", "has_face": false }
+  ],
+  "employees": [
+    { "id": 1, "name": "张明", "employee_no": "EMP001", "department_id": 1, "position": "部门主管", "shift": "A班", "status": "active" },
+    { "id": 2, "name": "王强", "employee_no": "EMP002", "department_id": 1, "position": "现场组长", "shift": "A班", "status": "active" },
+    { "id": 3, "name": "陈丽", "employee_no": "EMP003", "department_id": 1, "position": "业务员", "shift": "A班", "status": "active" },
+    { "id": 4, "name": "林涛", "employee_no": "EMP004", "department_id": 1, "position": "现场品管", "shift": "B班", "status": "active" },
+    { "id": 5, "name": "赵刚", "employee_no": "EMP005", "department_id": 1, "position": "系统管理员", "shift": "A班", "status": "active" },
+    { "id": 6, "name": "李华", "employee_no": "EMP006", "department_id": 2, "position": "部门主管", "shift": "A班", "status": "active" },
+    { "id": 7, "name": "周伟", "employee_no": "EMP007", "department_id": 2, "position": "现场组长", "shift": "B班", "status": "active" },
+    { "id": 8, "name": "吴芳", "employee_no": "EMP008", "department_id": 2, "position": "业务员", "shift": "A班", "status": "active" },
+    { "id": 9, "name": "郑浩", "employee_no": "EMP009", "department_id": 2, "position": "现场品管", "shift": "B班", "status": "active" },
+    { "id": 10, "name": "刘洋", "employee_no": "EMP010", "department_id": 3, "position": "部门主管", "shift": "A班", "status": "active" },
+    { "id": 11, "name": "黄杰", "employee_no": "EMP011", "department_id": 3, "position": "现场组长", "shift": "B班", "status": "active" },
+    { "id": 12, "name": "孙婷", "employee_no": "EMP012", "department_id": 3, "position": "业务员", "shift": "A班", "status": "active" },
+    { "id": 13, "name": "马超", "employee_no": "EMP013", "department_id": 3, "position": "现场品管", "shift": "B班", "status": "active" }
+  ]
+}

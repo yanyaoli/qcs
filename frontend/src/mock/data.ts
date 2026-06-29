@@ -10,8 +10,8 @@ export interface Employee {
   name: string
   employee_no: string
   department_id: number
-  position: string
-  shift: string
+  position_id: number
+  shift_id: number
   status: string
 }
 
@@ -26,7 +26,7 @@ export interface Shift {
 }
 
 export interface Permission {
-  position: string
+  position_id: number
   canEditBasicDict: boolean
   canEditRelatedData: boolean
 }
@@ -93,6 +93,22 @@ export interface FirstArticleConfirmation {
 
 export const firstArticleConfirmations: FirstArticleConfirmation[] = raw.firstArticleConfirmations
 
+export interface IronTapeStatus {
+  name: string
+  needsFirstArticle: boolean
+  cssClass: string
+}
+
+export const ironTapeStatuses: IronTapeStatus[] = raw.ironTapeStatuses
+
+export interface ConfirmationStatus {
+  name: string
+  cssClass: string
+  prodCssClass: string
+}
+
+export const confirmationStatuses: ConfirmationStatus[] = raw.confirmationStatuses
+
 export interface WorkOrder {
   id: number
   workOrderNo: string
@@ -100,7 +116,8 @@ export interface WorkOrder {
   scheduleDate: string
   productName: string
   specification: string
-  color: string
+  colorName: string
+  colorHex: string
   ironTapeStatus: string
   machineCode: string
   createdAt: string

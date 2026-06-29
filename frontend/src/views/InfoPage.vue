@@ -89,7 +89,7 @@
           <table class="tbl">
             <thead><tr><th>职位</th><th style="width:160px">修改基础字典</th><th style="width:160px">修改相关数据</th></tr></thead>
             <tbody>
-              <tr v-for="(row, i) in permissionData" :key="row.position" :style="rowStyle(i)">
+              <tr v-for="(row, i) in permissionData" :key="row.position_id" :style="rowStyle(i)">
                 <td>{{ row.position }}</td>
                 <td class="cell-center"><i v-if="row.canEditBasicDict" class="ri-check-line check-yes"></i><i v-else class="ri-close-line check-no"></i></td>
                 <td class="cell-center"><i v-if="row.canEditRelatedData" class="ri-check-line check-yes"></i><i v-else class="ri-close-line check-no"></i></td>
@@ -106,7 +106,7 @@
             <thead><tr><th style="width:120px">工号</th><th>姓名</th><th>部门</th><th style="width:130px">职位</th><th style="width:100px">班次</th></tr></thead>
             <tbody>
               <tr v-for="(row, i) in employeeData" :key="row.id" :style="rowStyle(i)">
-                <td>{{ row.employee_no }}</td><td>{{ row.name }}</td><td>{{ row.department }}</td><td>{{ row.position }}</td><td>{{ row.shift }}</td>
+                <td>{{ row.employee_no }}</td><td>{{ row.name }}</td><td>{{ row.department_name }}</td><td>{{ row.position_name }}</td><td>{{ row.shift_name }}</td>
               </tr>
             </tbody>
           </table>
@@ -121,7 +121,7 @@
             <tbody>
               <tr v-for="(row, i) in authData" :key="row.employee_id" :style="rowStyle(i)">
                 <td>{{ row.name }}</td><td>{{ row.employee_no }}</td><td>{{ row.username }}</td>
-                <td class="cell-center"><span :class="row.status === '启用' ? 'tag-green' : 'tag-gray'">{{ row.status }}</span></td>
+                <td class="cell-center"><span :class="row.statusClass">{{ row.statusLabel }}</span></td>
                 <td class="cell-center"><span v-if="row.has_face" class="tag-green">已录入</span><span v-else class="tag-gray">未录入</span></td>
               </tr>
             </tbody>
@@ -267,12 +267,21 @@ const currentTitle = computed(() => titles[activeKey.value] || '')
 const departmentData = departments
 const shiftData = shifts
 const positionData = positions
-const permissionData = permissions
-
 const employeeData = computed(() =>
   employees.map(e => ({
     ...e,
-    department: departments.find(d => d.id === e.department_id)?.name || '',
+    department_name: departments.find(d => d.id === e.department_id)?.name || '',
+    position_name: positions.find(p => p.id === e.position_id)?.name || '',
+    shift_name: shifts.find(s => s.id === e.shift_id)?.name || '',
+  }))
+)
+
+const permissionData = computed(() =>
+  permissions.map(p => ({
+    position_id: p.position_id,
+    canEditBasicDict: p.canEditBasicDict,
+    canEditRelatedData: p.canEditRelatedData,
+    position: positions.find(pos => pos.id === p.position_id)?.name || '',
   }))
 )
 
@@ -280,9 +289,14 @@ const authData = computed(() =>
   employeeAuth.map(a => {
     const emp = employees.find(e => e.id === a.employee_id)
     return {
-      ...a,
+      employee_id: a.employee_id,
+      username: a.username,
+      status: a.status,
+      has_face: a.has_face,
       name: emp?.name || '',
       employee_no: emp?.employee_no || '',
+      statusLabel: a.status === 'active' ? '启用' : '禁用',
+      statusClass: a.status === 'active' ? 'tag-green' : 'tag-gray',
     }
   })
 )

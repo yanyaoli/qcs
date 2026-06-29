@@ -96,23 +96,23 @@
             <th
               class="filter-th"
               style="width:80px"
-              :class="{ 'has-filter': hasActiveFilter('color') }"
+              :class="{ 'has-filter': hasActiveFilter('colorName') }"
             >
-              <div class="th-label" @click="toggleDropdown('color')">
+              <div class="th-label" @click="toggleDropdown('colorName')">
                 颜色
                 <i class="ri-arrow-down-s-line"></i>
               </div>
-              <div v-if="openDropdown === 'color'" class="filter-dropdown" @click.stop>
+              <div v-if="openDropdown === 'colorName'" class="filter-dropdown" @click.stop>
                 <label class="filter-all">
                   <input
                     type="checkbox"
-                    :checked="isAllSelected('color')"
-                    @change="toggleAll('color')"
+                    :checked="isAllSelected('colorName')"
+                    @change="toggleAll('colorName')"
                   />
                   全选
                 </label>
-                <label v-for="opt in filterOptions.color" :key="opt" class="filter-item">
-                  <input type="checkbox" :value="opt" v-model="filters.color" />
+                <label v-for="opt in filterOptions.colorName" :key="opt" class="filter-item">
+                  <input type="checkbox" :value="opt" v-model="filters.colorName" />
                   {{ opt }}
                 </label>
               </div>
@@ -153,8 +153,8 @@
               <td>{{ row.productName }}</td>
               <td>{{ row.specification }}</td>
               <td>
-                <span class="color-dot" :style="{ backgroundColor: colorMap[row.color] || '#999' }"></span>
-                {{ row.color }}
+                <span class="color-dot" :style="{ backgroundColor: row.colorHex }"></span>
+              {{ row.colorName }}
               </td>
               <td>
                 <span class="status-tag" :class="statusClass(row.ironTapeStatus)">
@@ -198,7 +198,7 @@
 <script setup lang="ts">
 import { ref, computed, reactive, onMounted, onUnmounted } from 'vue'
 import { productionApi } from '../api/production'
-import { firstArticleConfirmations } from '../mock/data'
+import { firstArticleConfirmations, ironTapeStatuses, confirmationStatuses } from '../mock/data'
 import type { WorkOrder } from '../mock/data'
 
 const workOrders = ref<WorkOrder[]>([])
@@ -209,7 +209,7 @@ const filters = reactive<Record<string, string[]>>({
   customerCode: [],
   productName: [],
   specification: [],
-  color: [],
+  colorName: [],
   ironTapeStatus: [],
 })
 
@@ -292,37 +292,13 @@ const getConfirmationStatus = (row: WorkOrder) => {
   return conf?.status || '待确认'
 }
 
+const tapeStatusMap = Object.fromEntries(ironTapeStatuses.map(s => [s.name, s.cssClass]))
+const statusClass = (status: string) => tapeStatusMap[status] || ''
+
+const confStatusMap = Object.fromEntries(confirmationStatuses.map(s => [s.name, s.prodCssClass]))
 const getConfirmationClass = (row: WorkOrder) => {
   const status = getConfirmationStatus(row)
-  switch (status) {
-    case '待确认': return 'status-no'
-    case '品管确认': return 'status-qc'
-    case '组长确认': return 'status-leader'
-    case '业务确认': return 'status-biz'
-    case '已确认': return 'status-done'
-    default: return ''
-  }
-}
-
-const colorMap: Record<string, string> = {
-  '红色': '#ef4444',
-  '蓝色': '#3b82f6',
-  '黑色': '#111827',
-  '银色': '#9ca3af',
-  '金色': '#f59e0b',
-  '白色': '#f3f4f6',
-  '灰色': '#6b7280',
-  '绿色': '#10b981',
-}
-
-const statusClass = (status: string) => {
-  switch (status) {
-    case '不需要': return 'status-no'
-    case '需要': return 'status-yes'
-    case '等待烫带': return 'status-wait'
-    case '烫带完成': return 'status-done'
-    default: return ''
-  }
+  return confStatusMap[status] || ''
 }
 
 const rowStyle = (i: number) =>

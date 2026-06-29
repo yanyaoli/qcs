@@ -1,4 +1,4 @@
-import { departments, employees } from '../mock/data'
+import { departments, employees, positions, shifts } from '../mock/data'
 import type { LoginRequest, LoginResponse, ApiResponse } from './types'
 
 function delay(ms = 300): Promise<void> {
@@ -22,7 +22,7 @@ export const authApi = {
       token,
       employee_id: emp.id,
       name: emp.name,
-      position: emp.position,
+      position: positions.find(p => p.id === emp.position_id)?.name || '',
     }
   },
 
@@ -39,8 +39,8 @@ export const authApi = {
         id: e.id,
         name: e.name,
         dept_id: e.department_id,
-        position: e.position,
-        shift: e.shift,
+        position: positions.find(p => p.id === e.position_id)?.name || '',
+        shift: shifts.find(s => s.id === e.shift_id)?.name || '',
         employee_no: e.employee_no,
       }))
   },

@@ -1,146 +1,164 @@
 <template>
   <div class="first-article-page">
-    <div class="left-panel">
-      <div class="panel-header">
-        <div class="header-left">
-          <h2>待首件确认</h2>
-          <span class="count">{{ displayGroups.length }} 项</span>
+    <div class="content-panels">
+      <div class="left-panel">
+        <div class="panel-header">
+          <div class="header-left">
+            <h2>待首件确认</h2>
+            <span class="count">{{ displayGroups.length }} 项</span>
+          </div>
+          <button class="btn-text" @click="showAll = !showAll">
+            {{ showAll ? '只看待确认' : '查看全部' }}
+          </button>
         </div>
-        <button class="btn-text" @click="showAll = !showAll">
-          {{ showAll ? '只看待确认' : '查看全部' }}
-        </button>
+        <div class="list-wrap">
+          <div
+            v-for="group in displayGroups"
+            :key="group.key"
+            class="order-card"
+            :class="{ active: selectedKey === group.key }"
+            @click="selectGroup(group)"
+          >
+            <div class="card-top">
+              <span class="card-title">{{ group.productName }}</span>
+              <span class="card-spec">{{ group.specification }}</span>
+              <span class="order-count">&times;{{ group.orders.length }}</span>
+              <span class="status-label" :class="statusLabelClass(group.status)">{{ group.status }}</span>
+            </div>
+            <div class="card-mid">
+              <span class="sub-info" v-if="group.confirmedBy">{{ group.confirmedBy }}</span>
+              <span class="sub-info" v-if="group.businessConfirmedBy"> / {{ group.businessConfirmedBy }}</span>
+              <span class="update-time">{{ group.lastUpdate }}</span>
+            </div>
+          </div>
+          <div v-if="displayGroups.length === 0" class="empty">暂无待确认项</div>
+        </div>
       </div>
-      <div class="list-wrap">
-        <div
-          v-for="group in displayGroups"
-          :key="group.key"
-          class="order-card"
-          :class="{ active: selectedKey === group.key }"
-          @click="selectGroup(group)"
-        >
-          <div class="card-top">
-            <span class="card-title">{{ group.productName }}</span>
-            <span class="card-spec">{{ group.specification }}</span>
-            <span class="order-count">&times;{{ group.orders.length }}</span>
-            <span class="status-label" :class="statusLabelClass(group.status)">{{ group.status }}</span>
-          </div>
-          <div class="card-mid">
-            <span class="sub-info" v-if="group.confirmedBy">{{ group.confirmedBy }}</span>
-            <span class="sub-info" v-if="group.businessConfirmedBy"> / {{ group.businessConfirmedBy }}</span>
-            <span class="update-time">{{ group.lastUpdate }}</span>
-          </div>
+
+      <div class="right-panel">
+        <div v-if="!selectedGroup" class="placeholder">
+          <i class="ri-file-list-3-line"></i>
+          <p>请选择待确认项</p>
         </div>
-        <div v-if="displayGroups.length === 0" class="empty">暂无待确认项</div>
+
+        <template v-else>
+          <div class="panel-header">
+            <div class="header-left">
+              <h2>{{ selectedGroup.productName }}</h2>
+              <span class="spec">{{ selectedGroup.specification }}</span>
+            </div>
+            <span class="timestamp">{{ currentTimestamp }}</span>
+          </div>
+
+          <div class="detail-area">
+            <div class="detail-section">
+              <div class="section-title">
+                生产详情
+                <span class="order-total">共 {{ selectedGroup.orders.length }} 单</span>
+              </div>
+              <div class="table-wrap-inner">
+                <table class="mini-tbl">
+                  <thead>
+                    <tr>
+                      <th><span class="th-primary">工作单号</span><span class="th-secondary">客户代号</span><span class="th-tertiary">排单日期</span></th>
+                      <th><span class="th-primary">品名</span><span class="th-secondary">规格</span><span class="th-tertiary">颜色</span></th>
+                      <th style="width:140px"><span class="th-primary">判定结果</span><span class="th-secondary">烫带状态</span><span class="th-tertiary">拉力测试</span></th>
+                      <th style="width:150px"><span class="th-primary">机台编号</span><span class="th-secondary">物理位置</span><span class="th-tertiary">所属部门</span></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <template v-for="(row, i) in selectedGroup.orders" :key="row.id">
+                      <tr :class="{ alt: i % 2 === 1 }">
+                        <td>
+                          <div class="cell-primary">{{ row.workOrderNo }}</div>
+                          <div class="cell-secondary">{{ row.customerCode }}</div>
+                          <div class="cell-tertiary">{{ row.scheduleDate }}</div>
+                        </td>
+                        <td>
+                          <div class="cell-primary">{{ row.productName }}</div>
+                          <div class="cell-secondary">{{ row.specification }}</div>
+                          <div class="cell-tertiary"><span class="color-dot" :style="{ backgroundColor: row.colorHex }"></span>{{ row.colorName }}</div>
+                        </td>
+                        <td>
+                          <div class="cell-primary">
+                            <span v-if="getJudgmentResult(row)" class="judgment-tag" :class="getJudgmentClass(row)">{{ getJudgmentResult(row) }}</span>
+                            <span v-else class="judgment-none">—</span>
+                          </div>
+                          <div class="cell-secondary"><span class="status-tag" :class="statusClass(row.ironTapeStatus)">{{ row.ironTapeStatus }}</span></div>
+                          <div class="cell-tertiary">{{ row.tensionTest || '—' }}</div>
+                        </td>
+                        <td>
+                          <div class="cell-primary">{{ row.machineCode }}</div>
+                          <div class="cell-secondary">{{ getMachineLocation(row.machineCode) || '—' }}</div>
+                          <div class="cell-tertiary">{{ getMachineDept(row.machineCode) || '—' }}</div>
+                        </td>
+                      </tr>
+                    </template>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="selectedGroup.status === '待确认'" class="operation-area">
+            <div class="op-section">
+              <div class="section-title">首件判定</div>
+              <div class="judge-row">
+                <button class="btn btn-ok" :class="{ active: judgeResult === 'OK' }" @click="judgeResult = 'OK'">
+                  <i class="ri-check-line"></i> OK
+                </button>
+                <div class="judge-ng" :class="{ active: judgeResult === 'NG' }">
+                  <button class="btn btn-ng" @click="judgeResult = 'NG'">
+                    <i class="ri-close-line"></i> NG
+                  </button>
+                  <select v-if="judgeResult === 'NG'" v-model="selectedDefect" class="defect-select">
+                    <option value="">选择不良原因</option>
+                    <option v-for="d in defectCauses" :key="d.id" :value="d.cause">{{ d.cause }}</option>
+                  </select>
+                </div>
+              </div>
+              <div class="judge-actions">
+                <button class="btn btn-confirm" :disabled="!canConfirm" @click="confirmFirstArticle">确认首件</button>
+              </div>
+            </div>
+          </div>
+        </template>
       </div>
     </div>
 
-    <div class="right-panel">
-      <div v-if="!selectedGroup" class="placeholder">
-        <i class="ri-file-list-3-line"></i>
-        <p>请选择待确认项</p>
+    <div v-if="selectedGroup && selectedGroup.status === '待确认'" class="signature-area">
+      <div class="sig-box" :class="{ signed: leaderSigned }" @click="leaderSigned = !leaderSigned">
+        <div class="sig-title">组长签字</div>
+        <div class="sig-status">{{ leaderSigned ? '已签字' : '点击签字' }}</div>
       </div>
-
-      <template v-else>
-        <div class="panel-header">
-          <div class="header-left">
-            <h2>{{ selectedGroup.productName }}</h2>
-            <span class="spec">{{ selectedGroup.specification }}</span>
-          </div>
-          <span class="timestamp">{{ currentTimestamp }}</span>
+      <div class="sig-box" :class="{ signed: qcSigned }" @click="qcSigned = !qcSigned">
+        <div class="sig-title">品管主管签字</div>
+        <div class="sig-status">{{ qcSigned ? '已签字' : '点击签字' }}</div>
+      </div>
+      <div class="sig-box sig-tension">
+        <div class="sig-title">拉力测试</div>
+        <div class="sig-tension-row">
+          <input v-model="tensionValue" class="sig-input" type="number" placeholder="N" />
+          <span class="sig-unit">N</span>
         </div>
-
-        <div class="detail-area">
-          <div class="detail-section">
-            <div class="section-title">
-              生产详情
-              <span class="order-total">共 {{ selectedGroup.orders.length }} 单</span>
-            </div>
-            <div class="table-wrap-inner">
-              <table class="mini-tbl">
-                <thead>
-                  <tr>
-                    <th><span class="th-primary">工作单号</span><span class="th-secondary">客户代号</span><span class="th-tertiary">排单日期</span></th>
-                    <th><span class="th-primary">品名</span><span class="th-secondary">规格</span><span class="th-tertiary">颜色</span></th>
-                    <th style="width:140px"><span class="th-primary">判定结果</span><span class="th-secondary">烫带状态</span><span class="th-tertiary">拉力测试</span></th>
-                    <th style="width:150px"><span class="th-primary">机台编号</span><span class="th-secondary">物理位置</span><span class="th-tertiary">所属部门</span></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <template v-for="(row, i) in selectedGroup.orders" :key="row.id">
-                    <tr :class="{ alt: i % 2 === 1 }">
-                      <td>
-                        <div class="cell-primary">{{ row.workOrderNo }}</div>
-                        <div class="cell-secondary">{{ row.customerCode }}</div>
-                        <div class="cell-tertiary">{{ row.scheduleDate }}</div>
-                      </td>
-                      <td>
-                        <div class="cell-primary">{{ row.productName }}</div>
-                        <div class="cell-secondary">{{ row.specification }}</div>
-                        <div class="cell-tertiary"><span class="color-dot" :style="{ backgroundColor: colorMap[row.color] || '#999' }"></span>{{ row.color }}</div>
-                      </td>
-                      <td>
-                        <div class="cell-primary">
-                          <span v-if="getJudgmentResult(row)" class="judgment-tag" :class="getJudgmentClass(row)">{{ getJudgmentResult(row) }}</span>
-                          <span v-else class="judgment-none">—</span>
-                        </div>
-                        <div class="cell-secondary"><span class="status-tag" :class="statusClass(row.ironTapeStatus)">{{ row.ironTapeStatus }}</span></div>
-                        <div class="cell-tertiary">{{ row.tensionTest || '—' }}</div>
-                      </td>
-                      <td>
-                        <div class="cell-primary">{{ row.machineCode }}</div>
-                        <div class="cell-secondary">{{ getMachineLocation(row.machineCode) || '—' }}</div>
-                        <div class="cell-tertiary">{{ getMachineDept(row.machineCode) || '—' }}</div>
-                      </td>
-                    </tr>
-                  </template>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <div v-if="selectedGroup.status === '待确认'" class="operation-area">
-          <div class="op-section">
-            <div class="section-title">首件判定</div>
-            <div class="judge-row">
-              <button class="btn btn-ok" :class="{ active: judgeResult === 'OK' }" @click="judgeResult = 'OK'">
-                <i class="ri-check-line"></i> OK
-              </button>
-              <div class="judge-ng" :class="{ active: judgeResult === 'NG' }">
-                <button class="btn btn-ng" @click="judgeResult = 'NG'">
-                  <i class="ri-close-line"></i> NG
-                </button>
-                <select v-if="judgeResult === 'NG'" v-model="selectedDefect" class="defect-select">
-                  <option value="">选择不良原因</option>
-                  <option v-for="d in defectCauses" :key="d.id" :value="d.cause">{{ d.cause }}</option>
-                </select>
-              </div>
-            </div>
-            <div class="judge-actions">
-              <button class="btn btn-confirm" :disabled="!canConfirm" @click="confirmFirstArticle">确认首件</button>
-            </div>
-          </div>
-        </div>
-      </template>
+        <div v-if="tensionValue" class="sig-tension-result">{{ tensionValue }}N</div>
+      </div>
+      <div
+        class="sig-box"
+        :class="{ signed: bizSigned, locked: !bizUnlocked }"
+        @click="bizUnlocked && (bizSigned = !bizSigned)"
+      >
+        <div class="sig-title">业务签字</div>
+        <div class="sig-status">{{ bizSigned ? '已签字' : bizUnlocked ? '点击签字' : '等待签字' }}</div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { workOrders, machines, departments, defectCauses, firstArticleConfirmations } from '../mock/data'
+import { workOrders, machines, departments, defectCauses, firstArticleConfirmations, ironTapeStatuses, confirmationStatuses } from '../mock/data'
 import type { WorkOrder, FirstArticleConfirmation } from '../mock/data'
-
-const colorMap: Record<string, string> = {
-  '红色': '#ef4444',
-  '蓝色': '#3b82f6',
-  '黑色': '#111827',
-  '银色': '#9ca3af',
-  '金色': '#f59e0b',
-  '白色': '#f3f4f6',
-  '灰色': '#6b7280',
-  '绿色': '#10b981',
-}
 
 const getJudgmentResult = (row: WorkOrder): string => {
   const key = `${row.productName}|${row.specification}`
@@ -157,15 +175,8 @@ const getJudgmentClass = (row: WorkOrder): string => {
   return conf.result === 'OK' ? 'judgment-ok' : 'judgment-ng'
 }
 
-const statusClass = (status: string) => {
-  switch (status) {
-    case '不需要': return 'status-no'
-    case '需要': return 'status-yes'
-    case '等待烫带': return 'status-wait'
-    case '烫带完成': return 'status-done'
-    default: return ''
-  }
-}
+const tapeStatusMap = Object.fromEntries(ironTapeStatuses.map(s => [s.name, s]))
+const statusClass = (status: string) => tapeStatusMap[status]?.cssClass || ''
 
 interface PendingGroup {
   key: string
@@ -190,9 +201,8 @@ const confirmationMap = computed(() => {
 })
 
 const allGroups = computed<PendingGroup[]>(() => {
-  const relevant = workOrders.filter(
-    w => w.ironTapeStatus === '不需要' || w.ironTapeStatus === '烫带完成'
-  )
+  const needsFA = ironTapeStatuses.filter(s => s.needsFirstArticle).map(s => s.name)
+  const relevant = workOrders.filter(w => needsFA.includes(w.ironTapeStatus))
   const map = new Map<string, WorkOrder[]>()
   for (const wo of relevant) {
     const key = `${wo.productName}|${wo.specification}`
@@ -243,16 +253,8 @@ const getMachineDept = (code: string) => {
   return departments.find(d => d.id === m.department_id)?.name ?? ''
 }
 
-const statusLabelClass = (status: string) => {
-  switch (status) {
-    case '待确认': return 'label-pending'
-    case '品管确认': return 'label-qc'
-    case '组长确认': return 'label-leader'
-    case '业务确认': return 'label-biz'
-    case '已确认': return 'label-done'
-    default: return ''
-  }
-}
+const confStatusMap = Object.fromEntries(confirmationStatuses.map(s => [s.name, s.cssClass]))
+const statusLabelClass = (status: string) => confStatusMap[status] || ''
 
 const currentTimestamp = ref('')
 
@@ -267,10 +269,21 @@ const updateTimestamp = () => {
   currentTimestamp.value = `${y}-${mo}-${d} ${h}:${m}:${s}`
 }
 
+const leaderSigned = ref(false)
+const qcSigned = ref(false)
+const tensionValue = ref('')
+const bizSigned = ref(false)
+
+const bizUnlocked = computed(() => leaderSigned.value || qcSigned.value)
+
 const selectGroup = (group: PendingGroup) => {
   selectedKey.value = group.key
   judgeResult.value = null
   selectedDefect.value = ''
+  leaderSigned.value = false
+  qcSigned.value = false
+  tensionValue.value = ''
+  bizSigned.value = false
 }
 
 const judgeResult = ref<'OK' | 'NG' | null>(null)
@@ -297,6 +310,14 @@ onMounted(() => {
 
 <style scoped lang="scss">
 .first-article-page {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.content-panels {
   flex: 1;
   min-height: 0;
   display: flex;
@@ -748,5 +769,103 @@ onMounted(() => {
   &:hover:not(:disabled) {
     opacity: 0.85;
   }
+}
+
+.signature-area {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.sig-box {
+  background: var(--color-panel);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 0.75rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-height: 80px;
+
+  &:hover {
+    border-color: rgba(229, 9, 20, 0.3);
+  }
+
+  &.signed {
+    border-color: var(--color-success);
+    background: rgba(16, 185, 129, 0.08);
+  }
+
+  &.locked {
+    opacity: 0.4;
+    cursor: not-allowed;
+
+    &:hover {
+      border-color: var(--color-border);
+    }
+  }
+}
+
+.sig-title {
+  color: var(--color-text);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.sig-status {
+  color: var(--color-text-secondary);
+  font-size: 0.8rem;
+}
+
+.sig-box.signed .sig-status {
+  color: var(--color-success);
+}
+
+.sig-tension {
+  cursor: default;
+
+  &:hover {
+    border-color: var(--color-border);
+  }
+}
+
+.sig-tension-row {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.sig-input {
+  width: 80px;
+  padding: 0.3rem 0.5rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  font-size: 0.85rem;
+
+  &::placeholder {
+    color: var(--color-text-secondary);
+    font-size: 0.8rem;
+  }
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-primary);
+  }
+}
+
+.sig-unit {
+  color: var(--color-text-secondary);
+  font-size: 0.8rem;
+}
+
+.sig-tension-result {
+  color: var(--color-text);
+  font-size: 0.85rem;
+  font-weight: 500;
 }
 </style>

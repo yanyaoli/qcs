@@ -120,24 +120,24 @@
             <th
               class="filter-th"
               style="width:120px"
-              :class="{ 'has-filter': hasActiveFilter('ironTapeStatus') }"
+              :class="{ 'has-filter': hasActiveFilter('ironTapeStatusId') }"
             >
-              <div class="th-label" @click="toggleDropdown('ironTapeStatus')">
+              <div class="th-label" @click="toggleDropdown('ironTapeStatusId')">
                 烫带状态
                 <i class="ri-arrow-down-s-line"></i>
               </div>
-              <div v-if="openDropdown === 'ironTapeStatus'" class="filter-dropdown" @click.stop>
+              <div v-if="openDropdown === 'ironTapeStatusId'" class="filter-dropdown" @click.stop>
                 <label class="filter-all">
                   <input
                     type="checkbox"
-                    :checked="isAllSelected('ironTapeStatus')"
-                    @change="toggleAll('ironTapeStatus')"
+                    :checked="isAllSelected('ironTapeStatusId')"
+                    @change="toggleAll('ironTapeStatusId')"
                   />
                   全选
                 </label>
-                <label v-for="opt in filterOptions.ironTapeStatus" :key="opt" class="filter-item">
-                  <input type="checkbox" :value="opt" v-model="filters.ironTapeStatus" />
-                  {{ opt }}
+                <label v-for="s in ironTapeStatuses" :key="s.id" class="filter-item">
+                  <input type="checkbox" :value="s.id" v-model="filters.ironTapeStatusId" />
+                  {{ s.name }}
                 </label>
               </div>
             </th>
@@ -157,8 +157,8 @@
               {{ row.colorName }}
               </td>
               <td>
-                <span class="status-tag" :class="statusClass(row.ironTapeStatus)">
-                  {{ row.ironTapeStatus }}
+                <span class="status-tag" :class="tapeStatusMap[row.ironTapeStatusId]?.cssClass || ''">
+                  {{ row.ironTapeStatusName }}
                 </span>
               </td>
             </tr>
@@ -198,7 +198,7 @@
 <script setup lang="ts">
 import { ref, computed, reactive, onMounted, onUnmounted } from 'vue'
 import { productionApi } from '../api/production'
-import { firstArticleConfirmations, ironTapeStatuses, confirmationStatuses } from '../mock/data'
+import { ironTapeStatuses, firstArticleStatuses } from '../mock/data'
 import type { WorkOrder } from '../mock/data'
 
 const workOrders = ref<WorkOrder[]>([])
@@ -210,7 +210,7 @@ const filters = reactive<Record<string, string[]>>({
   productName: [],
   specification: [],
   colorName: [],
-  ironTapeStatus: [],
+  ironTapeStatusId: [],
 })
 
 const openDropdown = ref<string | null>(null)
@@ -286,20 +286,13 @@ const toggleExpand = (id: number) => {
   else expandedIds.value.add(id)
 }
 
-const getConfirmationStatus = (row: WorkOrder) => {
-  const key = `${row.productName}|${row.specification}`
-  const conf = firstArticleConfirmations.find(c => c.productKey === key)
-  return conf?.status || '待确认'
-}
+const tapeStatusMap = Object.fromEntries(ironTapeStatuses.map(s => [s.id, s]))
+const faStatusMapProd = Object.fromEntries(firstArticleStatuses.map(s => [s.id, s]))
 
-const tapeStatusMap = Object.fromEntries(ironTapeStatuses.map(s => [s.name, s.cssClass]))
-const statusClass = (status: string) => tapeStatusMap[status] || ''
 
-const confStatusMap = Object.fromEntries(confirmationStatuses.map(s => [s.name, s.prodCssClass]))
-const getConfirmationClass = (row: WorkOrder) => {
-  const status = getConfirmationStatus(row)
-  return confStatusMap[status] || ''
-}
+
+const getConfirmationStatus = (row: WorkOrder) => row.firstArticleStatusName || '待确认'
+const getConfirmationClass = (row: WorkOrder) => faStatusMapProd[row.firstArticleStatusId]?.prodCssClass || ''
 
 const rowStyle = (i: number) =>
   i % 2 === 1 ? { backgroundColor: 'rgba(255, 255, 255, 0.04)' } as const : {}

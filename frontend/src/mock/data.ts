@@ -81,8 +81,14 @@ export const productStandards: ProductStandard[] = raw.productStandards
 
 export interface FirstArticleConfirmation {
   productKey: string
-  status: string
-  result?: string
+  productName?: string
+  specification?: string
+  count: number
+  orders: number[]
+  statusId: number
+  statusName: string
+  lastUpdate: string
+  pass?: boolean
   defectCause?: string
   confirmedBy?: string
   confirmedAt?: string
@@ -94,20 +100,20 @@ export interface FirstArticleConfirmation {
 export const firstArticleConfirmations: FirstArticleConfirmation[] = raw.firstArticleConfirmations
 
 export interface IronTapeStatus {
+  id: number
   name: string
-  needsFirstArticle: boolean
   cssClass: string
 }
 
-export const ironTapeStatuses: IronTapeStatus[] = raw.ironTapeStatuses
-
-export interface ConfirmationStatus {
+export interface FirstArticleStatus {
+  id: number
   name: string
   cssClass: string
   prodCssClass: string
 }
 
-export const confirmationStatuses: ConfirmationStatus[] = raw.confirmationStatuses
+export const ironTapeStatuses: IronTapeStatus[] = raw.ironTapeStatuses
+export const firstArticleStatuses: FirstArticleStatus[] = raw.firstArticleStatuses
 
 export interface WorkOrder {
   id: number
@@ -118,7 +124,11 @@ export interface WorkOrder {
   specification: string
   colorName: string
   colorHex: string
-  ironTapeStatus: string
+  ironTapeStatusId: number
+  ironTapeStatusName: string
+  firstArticleStatusId: number
+  firstArticleStatusName: string
+  needsFirstArticle: boolean
   machineCode: string
   createdAt: string
   updatedAt: string

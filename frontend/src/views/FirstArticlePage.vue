@@ -22,7 +22,7 @@
             <div class="card-top">
               <span class="card-title">{{ group.productName }}</span>
               <span class="card-spec">{{ group.specification }}</span>
-              <span class="order-count">&times;{{ group.orders.length }}</span>
+              <span class="order-count">&times;{{ group.count }}</span>
               <span class="status-label" :class="statusLabelClass(group.status)">{{ group.status }}</span>
             </div>
             <div class="card-mid">
@@ -84,7 +84,7 @@
                             <span v-if="getJudgmentResult(row)" class="judgment-tag" :class="getJudgmentClass(row)">{{ getJudgmentResult(row) }}</span>
                             <span v-else class="judgment-none">—</span>
                           </div>
-                          <div class="cell-secondary"><span class="status-tag" :class="statusClass(row.ironTapeStatus)">{{ row.ironTapeStatus }}</span></div>
+                           <div class="cell-secondary"><span class="status-tag" :class="tapeStatusMap[row.ironTapeStatusId]?.cssClass || ''">{{ row.ironTapeStatusName }}</span></div>
                           <div class="cell-tertiary">{{ row.tensionTest || '—' }}</div>
                         </td>
                         <td>
@@ -157,77 +157,57 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { workOrders, machines, departments, defectCauses, firstArticleConfirmations, ironTapeStatuses, confirmationStatuses } from '../mock/data'
-import type { WorkOrder, FirstArticleConfirmation } from '../mock/data'
+import { workOrders, machines, departments, defectCauses, firstArticleConfirmations, ironTapeStatuses, firstArticleStatuses } from '../mock/data'
+import type { WorkOrder } from '../mock/data'
+import type { FirstArticleConfirmation } from '../mock/data'
+
+const tapeStatusMap = Object.fromEntries(ironTapeStatuses.map(s => [s.id, s]))
+const faStatusMap = Object.fromEntries(firstArticleStatuses.map(s => [s.id, s]))
+
+const faConfMap = computed(() => {
+  const m = new Map<string, FirstArticleConfirmation>()
+  for (const c of firstArticleConfirmations) m.set(c.productKey, c)
+  return m
+})
 
 const getJudgmentResult = (row: WorkOrder): string => {
-  const key = `${row.productName}|${row.specification}`
-  const conf = confirmationMap.value.get(key)
-  if (!conf || !conf.result) return ''
-  const label = conf.result === 'OK' ? 'OK' : `NG${conf.defectCause ? ':' + conf.defectCause : ''}`
-  return label
+  const conf = faConfMap.value.get(`${row.productName}|${row.specification}`)
+  if (!conf || conf.pass === undefined) return ''
+  return conf.pass ? 'OK' : `NG${conf.defectCause ? ':' + conf.defectCause : ''}`
 }
 
 const getJudgmentClass = (row: WorkOrder): string => {
-  const key = `${row.productName}|${row.specification}`
-  const conf = confirmationMap.value.get(key)
-  if (!conf || !conf.result) return ''
-  return conf.result === 'OK' ? 'judgment-ok' : 'judgment-ng'
+  const conf = faConfMap.value.get(`${row.productName}|${row.specification}`)
+  if (!conf || conf.pass === undefined) return ''
+  return conf.pass ? 'judgment-ok' : 'judgment-ng'
 }
 
-const tapeStatusMap = Object.fromEntries(ironTapeStatuses.map(s => [s.name, s]))
-const statusClass = (status: string) => tapeStatusMap[status]?.cssClass || ''
 
 interface PendingGroup {
   key: string
   productName: string
   specification: string
   orders: WorkOrder[]
+  count: number
   status: string
   confirmedBy?: string
-  confirmedAt?: string
-  businessConfirmed?: boolean
   businessConfirmedBy?: string
-  businessConfirmedAt?: string
   lastUpdate: string
 }
 
-const confirmationMap = computed(() => {
-  const map = new Map<string, FirstArticleConfirmation>()
-  for (const c of firstArticleConfirmations) {
-    map.set(c.productKey, c)
-  }
-  return map
-})
-
 const allGroups = computed<PendingGroup[]>(() => {
-  const needsFA = ironTapeStatuses.filter(s => s.needsFirstArticle).map(s => s.name)
-  const relevant = workOrders.filter(w => needsFA.includes(w.ironTapeStatus))
-  const map = new Map<string, WorkOrder[]>()
-  for (const wo of relevant) {
-    const key = `${wo.productName}|${wo.specification}`
-    if (!map.has(key)) map.set(key, [])
-    map.get(key)!.push(wo)
-  }
-  return Array.from(map.entries()).map(([key, orders]) => {
-    const [productName, specification] = key.split('|')
-    const conf = confirmationMap.value.get(key)
-    const lastUpdate = [conf?.confirmedAt, conf?.businessConfirmedAt, ...orders.map(o => o.updatedAt)]
-      .filter(Boolean)
-      .sort()
-      .reverse()[0] || ''
+  return firstArticleConfirmations.map(item => {
+    const orders = item.orders.map(id => workOrders.find(w => w.id === id)).filter(Boolean) as WorkOrder[]
     return {
-      key,
-      productName,
-      specification,
+      key: item.productKey,
+      productName: item.productName || '',
+      specification: item.specification || '',
       orders,
-      status: conf?.status || '待确认',
-      confirmedBy: conf?.confirmedBy,
-      confirmedAt: conf?.confirmedAt,
-      businessConfirmed: conf?.businessConfirmed,
-      businessConfirmedBy: conf?.businessConfirmedBy,
-      businessConfirmedAt: conf?.businessConfirmedAt,
-      lastUpdate,
+      count: item.count,
+      status: item.statusName,
+      confirmedBy: item.confirmedBy,
+      businessConfirmedBy: item.businessConfirmedBy,
+      lastUpdate: item.lastUpdate,
     }
   })
 })
@@ -253,8 +233,10 @@ const getMachineDept = (code: string) => {
   return departments.find(d => d.id === m.department_id)?.name ?? ''
 }
 
-const confStatusMap = Object.fromEntries(confirmationStatuses.map(s => [s.name, s.cssClass]))
-const statusLabelClass = (status: string) => confStatusMap[status] || ''
+const statusLabelClass = (status: string) => {
+  const entry = Object.values(faStatusMap).find(s => s.name === status)
+  return entry?.cssClass || ''
+}
 
 const currentTimestamp = ref('')
 
